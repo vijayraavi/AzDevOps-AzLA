@@ -1,0 +1,144 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workflows_DevOpsLA_name": {
+            "defaultValue": "DevOpsLA",
+            "type": "String"
+        },
+        "connections_office365_name": {
+            "defaultValue": "office365",
+            "type": "String"
+        },
+        "connections_visualstudioteamservices_name": {
+            "defaultValue": "visualstudioteamservices",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "comments": "Generalized from resource: '/subscriptions/2d64c8ea-8212-42f0-8125-9a318002a73e/resourceGroups/DevOpsLA/providers/Microsoft.Logic/workflows/DevOpsLA'.",
+            "type": "Microsoft.Logic/workflows",
+            "name": "[parameters('workflows_DevOpsLA_name')]",
+            "apiVersion": "2017-07-01",
+            "location": "southindia",
+            "tags": {},
+            "scale": null,
+            "properties": {
+                "state": "Enabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "When_a_work_item_is_assigned": {
+                            "recurrence": {
+                                "frequency": "Minute",
+                                "interval": 3
+                            },
+                            "splitOn": "@triggerBody()?['value']",
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['visualstudioteamservices']['connectionId']"
+                                    }
+                                },
+                                "method": "get",
+                                "path": "/v2/workitemassigned_trigger/@{encodeURIComponent('MHC-Demo')}/_apis/wit/wiql",
+                                "queries": {
+                                    "account": "partham",
+                                    "areaPathComparison": "Equals",
+                                    "iterationPathComparison": "Equals",
+                                    "team": "MHC-Demo Team",
+                                    "wiql__Microsoft_VSTS_Common_Priority": "1",
+                                    "wiql__System_AssignedTo": "pamishr@microsoft.com",
+                                    "wiql__System_WorkItemType": "Bug"
+                                }
+                            }
+                        }
+                    },
+                    "actions": {
+                        "Send_an_email": {
+                            "runAfter": {},
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "body": {
+                                    "Body": "Hi,\n\nYou have been assigned a Bug Fix Item:\nWork Item(Bug):@{triggerBody()?['Fields']?['Vsts_WorkItemUrl']}\nBuild in which the Bug was Found:@{triggerBody()?['Fields']?['Microsoft_VSTS_Build_FoundIn']}",
+                                    "Subject": "Work Item Assigned - Bug",
+                                    "To": "@triggerBody()?['Fields']?['Vsts_AssignedToEmail']"
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['office365']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "path": "/Mail"
+                            }
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "office365": {
+                                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('connections_office365_name'))]",
+                                "connectionName": "office365",
+                                "id": "/subscriptions/2d64c8ea-8212-42f0-8125-9a318002a73e/providers/Microsoft.Web/locations/southindia/managedApis/office365"
+                            },
+                            "visualstudioteamservices": {
+                                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('connections_visualstudioteamservices_name'))]",
+                                "connectionName": "visualstudioteamservices",
+                                "id": "/subscriptions/2d64c8ea-8212-42f0-8125-9a318002a73e/providers/Microsoft.Web/locations/southindia/managedApis/visualstudioteamservices"
+                            }
+                        }
+                    }
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/connections', parameters('connections_office365_name'))]",
+                "[resourceId('Microsoft.Web/connections', parameters('connections_visualstudioteamservices_name'))]"
+            ]
+        },
+        {
+            "comments": "Generalized from resource: '/subscriptions/2d64c8ea-8212-42f0-8125-9a318002a73e/resourceGroups/DevOpsLA/providers/Microsoft.Web/connections/office365'.",
+            "type": "Microsoft.Web/connections",
+            "name": "[parameters('connections_office365_name')]",
+            "apiVersion": "2016-06-01",
+            "location": "southindia",
+            "scale": null,
+            "properties": {
+                "displayName": "pamishr@microsoft.com",
+                "customParameterValues": {},
+                "api": {
+                    "id": "[concat('/subscriptions/2d64c8ea-8212-42f0-8125-9a318002a73e/providers/Microsoft.Web/locations/southindia/managedApis/', parameters('connections_office365_name'))]"
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "comments": "Generalized from resource: '/subscriptions/2d64c8ea-8212-42f0-8125-9a318002a73e/resourceGroups/DevOpsLA/providers/Microsoft.Web/connections/visualstudioteamservices'.",
+            "type": "Microsoft.Web/connections",
+            "name": "[parameters('connections_visualstudioteamservices_name')]",
+            "apiVersion": "2016-06-01",
+            "location": "southindia",
+            "scale": null,
+            "properties": {
+                "displayName": "Azure DevOps",
+                "customParameterValues": {},
+                "api": {
+                    "id": "[concat('/subscriptions/2d64c8ea-8212-42f0-8125-9a318002a73e/providers/Microsoft.Web/locations/southindia/managedApis/', parameters('connections_visualstudioteamservices_name'))]"
+                }
+            },
+            "dependsOn": []
+        }
+    ]
+}
